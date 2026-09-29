@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ÉconoAnki – Économie & Bourse pour Lycéens</title>
+  <meta name="description" content="Web app d'apprentissage de l'économie et des marchés financiers par répétition espacée, gamification et portefeuille virtuel." />
+
+  <!-- Google Fonts : Space Grotesk pour les chiffres/titres, Inter pour la lecture -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app-container">
+    <!-- EN-TÊTE PRINCIPAL & STATISTIQUES GLOBALES -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo">€</div>
+        <div>
+          <div class="brand-title">ÉconoAnki</div>
+          <div class="brand-subtitle">Économie & Marchés Financiers</div>
+        </div>
+      </div>
+
+      <div class="header-stats">
+        <div class="stat-chip amber-chip" title="Points d'expérience accumulés">
+          <span>⚡</span>
+          <span id="header-xp-val" class="tabular-num">0</span>
+          <span>XP</span>
+        </div>
+        <div class="stat-chip" title="Votre niveau actuel">
+          <span id="header-level-val" class="tabular-num">Niv. 1</span>
+        </div>
+        <div class="stat-chip green-chip" title="Capital liquide virtuel disponible pour investir">
+          <span>💼</span>
+          <span id="header-cash-val" class="tabular-num">1 000 €</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-toggle-sound" class="icon-btn" title="Activer / Couper le son" aria-label="Couper ou activer le son">🔊</button>
+        <button id="btn-open-settings" class="icon-btn" title="Paramètres et sauvegardes" aria-label="Paramètres">⚙️</button>
+      </div>
+    </header>
+
+    <!-- BARRE DE NAVIGATION (ONGLETS) -->
+    <nav class="app-nav">
+      <button class="nav-tab active" id="tab-collection" data-view="collection">🗂️ Collection</button>
+      <button class="nav-tab" id="tab-sprint" data-view="sprint">⚡ Sprint 60s</button>
+      <button class="nav-tab" id="tab-portfolio" data-view="portfolio">💼 Portefeuille Virtuel</button>
+      <button class="nav-tab" id="tab-fiches" data-view="fiches">📚 20 Fiches de Cours</button>
+    </nav>
+
+    <!-- ====================================================================
+         VUE 1 : COLLECTION (ACCUEIL)
+         ==================================================================== -->
+    <main id="view-collection" class="view-section active">
+      <!-- HERO CARTE D'ACTION & OBJECTIF DU JOUR -->
+      <section class="collection-hero">
+        <div class="ring-container">
+          <svg class="ring-svg" viewBox="0 0 90 90">
+            <circle class="ring-bg" cx="45" cy="45" r="38" />
+            <circle id="ring-progress-svg" class="ring-progress" cx="45" cy="45" r="38" />
+          </svg>
+          <div class="ring-center-text">
+            <div id="ring-count-display" class="ring-count tabular-num">0/30</div>
+            <div class="ring-label">Cartes</div>
+          </div>
+        </div>
+
+        <div class="hero-text">
+          <h2>Prêt pour votre révision quotidienne ?</h2>
+          <p>3 à 5 minutes par jour suffisent pour ancrer les mécanismes économiques et boursiers dans votre mémoire à long terme.</p>
+        </div>
+
+        <div class="hero-actions">
+          <button id="btn-start-revision" class="btn-primary">
+            <span>▶</span> Lancer la révision
+          </button>
+          <button id="btn-start-sprint" class="btn-secondary">
+            <span>⚡</span> Mode Sprint (60s)
+          </button>
+        </div>
+      </section>
+
+      <!-- BANDEAU SÉRIE & CALENDRIER 30 JOURS -->
+      <section class="streak-card">
+        <div class="streak-header">
+          <div class="streak-info-title">
+            <span>📅</span>
+            <span>Activité des 30 derniers jours</span>
+          </div>
+          <span class="grace-badge">1 jour de tolérance / semaine</span>
+        </div>
+        <div id="calendar-30d-container" class="calendar-30d-grid">
+          <!-- Généré dynamiquement en JS -->
+        </div>
+      </section>
+
+      <!-- GRILLE DES VIGNETTES (COLLECTION DE DÉFINITIONS) -->
+      <section class="collection-section">
+        <div class="section-header">
+          <h3>
+            <span>🏛️</span>
+            <span>Collection des Notions Économiques</span>
+          </h3>
+          <div class="legend-pills">
+            <span class="legend-item"><span class="legend-dot dot-new"></span> Neuve</span>
+            <span class="legend-item"><span class="legend-dot dot-learning"></span> Apprentissage</span>
+            <span class="legend-item"><span class="legend-dot dot-young"></span> Jeune</span>
+            <span class="legend-item"><span class="legend-dot dot-gold"></span> Mûre (>21j)</span>
+          </div>
+        </div>
+
+        <div id="collection-grid-container" class="collection-grid">
+          <!-- Vignettes générées dynamiquement -->
+        </div>
+      </section>
+    </main>
+
+    <!-- ====================================================================
+         VUE 2 : SESSION DE RÉVISION (SRS ANKI)
+         ==================================================================== -->
+    <section id="view-session" class="view-section">
+      <div class="session-container">
+        <!-- BARRE DU HAUT : COMBO GÉANT & PROGRESSION -->
+        <div class="session-top-bar">
+          <div class="session-progress-info">
+            <span>Carte</span>
+            <strong id="session-card-counter" class="tabular-num">1 / 10</strong>
+          </div>
+
+          <div id="session-combo-badge" class="session-combo-badge">
+            <span style="font-size:0.85rem">COMBO</span>
+            <span id="session-combo-val" class="combo-num tabular-num">0</span>
+            <span id="session-combo-mult" class="combo-multiplier">x1.0</span>
+          </div>
+        </div>
+
+        <!-- SCÈNE 3D DE LA CARTE -->
+        <div id="card-stage" class="card-stage">
+          <div id="flashcard-wrapper" class="flashcard-wrapper">
+            <!-- RECTO DE LA CARTE -->
+            <div class="card-face card-face-front">
+              <div class="card-header-bar">
+                <span id="card-module-tag" class="card-module-tag">Module 1 : Les Fondamentaux</span>
+                <span id="card-badge-format" class="card-badge-format">QCM</span>
+              </div>
+
+              <!-- Signalement de carte problématique si >= 8 échecs -->
+              <div id="card-leech-banner" class="leech-banner" style="display:none;">
+                <span>⚠️</span>
+                <span>Carte difficile (8 échecs). Conseil : relisez la fiche de cours associée pour consolider l'intuition.</span>
+              </div>
+
+              <div class="card-body-content">
+                <div id="card-question-text" class="card-question-text">
+                  Chargement de la question...
+                </div>
+
+                <div id="card-interaction-zone" class="card-interaction-zone">
+                  <!-- Injecté dynamiquement : 4 boutons QCM ou formulaire de saisie écrite -->
+                </div>
+              </div>
+            </div>
+
+            <!-- VERSO DE LA CARTE (RÉPONSE ET DÉTAILS) -->
+            <div class="card-face card-face-back">
+              <div class="card-header-bar">
+                <span class="card-module-tag">Définition & Analyse</span>
+                <span class="card-badge-format">Correction</span>
+              </div>
+
+              <div class="card-body-content">
+                <div id="card-term-display" class="card-term-display">
+                  Terme économique
+                </div>
+
+                <div id="card-definition-box" class="card-definition-box">
+                  Définition complète...
+                </div>
+
+                <div id="card-example-box" class="card-example-box">
+                  Exemple concret...
+                </div>
+
+                <div id="card-diff-container" class="diff-container"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CONTRÔLES EN BAS D'ÉCRAN (TOUCHES 1, 2, 3, 4 OU ESPACE) -->
+        <div class="session-footer-controls">
+          <button id="btn-show-answer" class="btn-flip-card">
+            <span>Afficher la réponse (Espace)</span>
+          </button>
+
+          <div id="review-controls-bar" class="review-controls-bar" style="display:none;">
+            <!-- Bouton 1 : Encore -->
+            <button id="btn-srs-encore" class="srs-btn srs-btn-encore" title="Raccourci clavier : 1">
+              <span class="srs-btn-name">Encore</span>
+              <span id="srs-interval-encore" class="srs-btn-interval tabular-num">1 min</span>
+              <span class="srs-btn-key">1</span>
+            </button>
+
+            <!-- Bouton 2 : Difficile -->
+            <button id="btn-srs-difficile" class="srs-btn srs-btn-difficile" title="Raccourci clavier : 2">
+              <span class="srs-btn-name">Difficile</span>
+              <span id="srs-interval-difficile" class="srs-btn-interval tabular-num">5 min</span>
+              <span class="srs-btn-key">2</span>
+            </button>
+
+            <!-- Bouton 3 : Correct -->
+            <button id="btn-srs-correct" class="srs-btn srs-btn-correct" title="Raccourci clavier : 3">
+              <span class="srs-btn-name">Correct</span>
+              <span id="srs-interval-correct" class="srs-btn-interval tabular-num">10 min</span>
+              <span class="srs-btn-key">3</span>
+            </button>
+
+            <!-- Bouton 4 : Facile -->
+            <button id="btn-srs-facile" class="srs-btn srs-btn-facile" title="Raccourci clavier : 4">
+              <span class="srs-btn-name">Facile</span>
+              <span id="srs-interval-facile" class="srs-btn-interval tabular-num">4 j</span>
+              <span class="srs-btn-key">4</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VUE 3 : ÉCRAN DE FIN DE SESSION (COMPTEURS DÉROULANTS)
+         ==================================================================== -->
+    <section id="view-summary" class="view-section">
+      <div class="summary-card">
+        <div class="summary-badge-top">🏆</div>
+        <h2 class="summary-title">Session Validée !</h2>
+        <p class="summary-subtitle">Votre régularité est le meilleur moteur de rétention.</p>
+
+        <div class="summary-stats-grid">
+          <div class="summary-stat-box">
+            <div id="sum-cards-seen" class="summary-stat-value tabular-num">0</div>
+            <div class="summary-stat-label">Cartes Révisées</div>
+          </div>
+          <div class="summary-stat-box">
+            <div id="sum-success-rate" class="summary-stat-value tabular-num">0%</div>
+            <div class="summary-stat-label">Taux de Réussite</div>
+          </div>
+          <div class="summary-stat-box">
+            <div id="sum-points-gained" class="summary-stat-value tabular-num">0</div>
+            <div class="summary-stat-label">Points XP Gagnés</div>
+          </div>
+          <div class="summary-stat-box">
+            <div id="sum-longest-combo" class="summary-stat-value tabular-num">0</div>
+            <div class="summary-stat-label">Plus Long Combo</div>
+          </div>
+        </div>
+
+        <div class="summary-stat-box" style="margin-bottom: 20px;">
+          <div id="sum-cash-earned" class="summary-stat-value tabular-num" style="color:var(--state-success)">0 €</div>
+          <div class="summary-stat-label">Capital Virtuel Débloqué pour votre Portefeuille</div>
+        </div>
+
+        <div class="new-acquired-section">
+          <div class="new-acquired-title">🎉 Notions consolidées dans cette session :</div>
+          <div id="sum-new-acquired-pills" class="new-acquired-pills">
+            <!-- Badges des nouveaux termes -->
+          </div>
+        </div>
+
+        <button id="btn-summary-home" class="btn-primary" style="width:100%;">
+          Retour à la collection
+        </button>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VUE 4 : MODE SPRINT (60 SECONDES)
+         ==================================================================== -->
+    <section id="view-sprint" class="view-section">
+      <div class="sprint-container">
+        <div class="sprint-top-hud">
+          <div class="sprint-timer-box">
+            <span>⏱️</span>
+            <div id="sprint-timer-val" class="sprint-timer-val tabular-num">60s</div>
+          </div>
+          <div class="sprint-score-box">
+            <div id="sprint-score-val" class="sprint-score-val tabular-num">0</div>
+            <div class="sprint-score-label">Points Sprint (Record : <span id="sprint-high-score" class="tabular-num">0</span>)</div>
+          </div>
+        </div>
+
+        <div class="sprint-rule-callout">
+          ⚡ <strong>Règle d'or :</strong> Le mode sprint ne modifie jamais vos intervalles ni vos facteurs de facilité de répétition espacée. Il rapporte des points XP et du capital virtuel pour vous challenger en vitesse !
+        </div>
+
+        <div class="summary-card" style="margin-top:0;">
+          <div id="sprint-question-text" class="card-question-text" style="font-size:1.15rem; min-height:60px;">
+            Question sprint...
+          </div>
+
+          <div id="sprint-options-grid" class="mcq-options-grid" style="margin-top:16px;">
+            <!-- Options QCM sprint -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VUE 5 : SIMULATEUR DE PORTEFEUILLE VIRTUEL
+         ==================================================================== -->
+    <section id="view-portfolio" class="view-section">
+      <div class="portfolio-hero">
+        <div class="port-kpi">
+          <div id="port-cash-val" class="port-kpi-val tabular-num">1 000.00 €</div>
+          <div class="port-kpi-sub">Liquidités Virtuelles Disponibles</div>
+        </div>
+        <div class="port-kpi">
+          <div id="port-total-val" class="port-kpi-val tabular-num" style="color:var(--accent-amber)">1 000.00 €</div>
+          <div class="port-kpi-sub">Valeur Totale du Portefeuille</div>
+        </div>
+        <div class="port-kpi">
+          <div id="port-pnl-val" class="port-kpi-val tabular-num" style="color:var(--state-success)">+0.00 € (0 %)</div>
+          <div class="port-kpi-sub">Plus/Moins-Value Latente</div>
+        </div>
+      </div>
+
+      <div class="assets-table-card">
+        <div class="section-header">
+          <h3>
+            <span>📈</span>
+            <span>Marché des Titres & Investissements Éducatifs</span>
+          </h3>
+          <span style="font-size:0.75rem; color:var(--text-muted)">Ticks de cotation simulés en direct</span>
+        </div>
+
+        <div id="port-assets-list" class="assets-list">
+          <!-- Liste des actifs avec boutons d'achat/vente -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VUE 6 : 20 FICHES DE COURS PÉDAGOGIQUES
+         ==================================================================== -->
+    <section id="view-fiches" class="view-section">
+      <div class="section-header">
+        <h3>
+          <span>📖</span>
+          <span>Les 20 Fiches Fondamentales du Programme</span>
+        </h3>
+        <span style="font-size:0.75rem; color:var(--text-muted)">Cliquez sur une fiche pour déplier le contenu</span>
+      </div>
+
+      <div id="fiches-accordion-container" class="fiches-accordion">
+        <!-- Accordéon des 20 fiches généré en JS -->
+      </div>
+    </section>
+  </div>
+
+  <!-- ====================================================================
+       OVERLAY PLEIN ÉCRAN : PASSAGE DE NIVEAU (1.5 SECONDES)
+       ==================================================================== -->
+  <div id="level-up-modal">
+    <div class="level-up-badge">🌟</div>
+    <div id="level-up-num-display" class="level-up-num tabular-num">2</div>
+    <div class="level-up-text">NIVEAU SUPÉRIEUR !</div>
+  </div>
+
+  <!-- ====================================================================
+       MODAL DE PARAMÈTRES & GESTION DES DONNÉES
+       ==================================================================== -->
+  <div id="settings-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="font-heading">Paramètres & Sauvegardes</h3>
+        <button id="btn-close-settings" class="icon-btn">✕</button>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">Objectif quotidien de révision</div>
+        <div class="setting-desc">Nombre de cartes à réviser chaque jour pour fermer l'anneau d'activité.</div>
+        <input type="number" id="setting-daily-goal" min="5" max="150" step="5" class="written-input" style="max-width:120px;" />
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">Thèmes & Modules actifs</div>
+        <div class="setting-desc">Cochez les modules que vous souhaitez inclure dans vos sessions :</div>
+        <div id="setting-modules-list" class="checkbox-module-list">
+          <!-- Checkboxes générées dynamiquement -->
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="toggle-switch-row">
+          <div>
+            <div class="setting-title" style="margin-bottom:2px;">Réduire les animations</div>
+            <div class="setting-desc" style="margin-bottom:0;">Désactive les secousses, particules et vibrations.</div>
+          </div>
+          <input type="checkbox" id="setting-reduced-motion" style="width:20px; height:20px; accent-color:var(--accent-amber);" />
+        </div>
+      </div>
+
+      <div class="setting-group">
+        <div class="setting-title">Sauvegarde & Restauration (JSON)</div>
+        <div class="setting-desc">Exportez votre progression sur votre ordinateur pour ne jamais la perdre.</div>
+        <div style="display:flex; gap:10px;">
+          <button id="btn-export-json" class="btn-secondary" style="flex:1;">📤 Exporter</button>
+          <button id="btn-import-json" class="btn-secondary" style="flex:1;">📥 Importer</button>
+        </div>
+        <input type="file" id="file-import-input" accept=".json" style="display:none;" />
+      </div>
+
+      <div class="setting-group" style="border-bottom:none;">
+        <div class="setting-title" style="color:var(--state-danger);">Zone de danger</div>
+        <div class="setting-desc">Effacer intégralement votre historique de répétition espacée et votre portefeuille.</div>
+        <button id="btn-full-reset" class="btn-danger-outline" style="width:100%;">
+          Remettre à zéro la progression
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPTS APPLICATION -->
+  <script src="vocabulaire.js"></script>
+  <script src="srs-engine.js"></script>
+  <script src="audio.js"></script>
+  <script src="portfolio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
